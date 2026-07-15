@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% from 'shared/_forms.html' import render_field %}
+{% block page_title %}{{ 'Edit patient' if mode == 'edit' else 'New patient' }}{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>{{ 'Edit patient' if mode == 'edit' else 'New patient' }}</h1>
+    <p class="muted">Store the birth date; age is calculated automatically.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('admin.patients_list') }}">← Back to patients</a>
+</div>
+
+<div class="card">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="form-grid">
+      {{ render_field(form.national_id, placeholder='e.g. 312345678') }}
+      {{ render_field(form.first_name) }}
+      {{ render_field(form.last_name) }}
+      {{ render_field(form.gender) }}
+      {{ render_field(form.birth_date) }}
+      {{ render_field(form.email, placeholder='patient@example.com') }}
+      {{ render_field(form.phone, placeholder='+972 ...') }}
+      {{ render_field(form.photo) }}
+    </div>
+    <div style="display:flex;gap:24px;margin-top:8px;">
+      {{ render_field(form.pregnancy_status) }}
+      {{ render_field(form.lactation_status) }}
+    </div>
+
+    {% if mode == 'edit' and patient and patient.photo %}
+      <p class="small muted">Current photo:
+        <img class="detail-photo" style="width:44px;height:44px;vertical-align:middle;"
+             src="{{ url_for('main.uploaded_file', filename=patient.photo) }}" alt=""></p>
+    {% endif %}
+
+    <div class="form-actions">
+      {{ form.submit(class_='btn btn-primary') }}
+      <a class="btn btn-secondary" href="{{ url_for('admin.patients_list') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

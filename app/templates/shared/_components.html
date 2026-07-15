@@ -1,0 +1,28 @@
+{# Reusable UI components: stat cards and status badges. #}
+
+{% macro stat_cards(stats) %}
+<div class="grid cols-3">
+  {% for s in stats %}
+    <div class="stat-card">
+      <div class="stat-value">{{ s.value }}</div>
+      <div class="stat-label">{{ s.label }}</div>
+      {% if s.endpoint %}<a class="small" href="{{ url_for(s.endpoint) }}">View →</a>{% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro status_badge(status) %}
+  {% set css = {'open':'badge-open','dispensed':'badge-dispensed','cancelled':'badge-cancelled'} %}
+  <span class="badge {{ css.get(status, 'badge-neutral') }}">{{ status|capitalize }}</span>
+{% endmacro %}
+
+{% macro action_card(icon, title, text, endpoint=None, label='Open') %}
+<div class="card">
+  <div style="font-size:1.6rem;">{{ icon }}</div>
+  <div class="card-title" style="margin-top:6px;">{{ title }}</div>
+  <p class="muted small">{{ text }}</p>
+  {% if endpoint %}<a class="btn btn-primary btn-sm" href="{{ url_for(endpoint) }}">{{ label }}</a>
+  {% else %}<span class="badge badge-neutral">Coming soon</span>{% endif %}
+</div>
+{% endmacro %}

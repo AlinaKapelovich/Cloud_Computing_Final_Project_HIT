@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ patient.first_name }} {{ patient.last_name }}{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div><h1>Patient profile</h1></div>
+  <div style="display:flex;gap:10px;">
+    <a class="btn btn-secondary" href="{{ url_for('admin.patients_list') }}">← Back</a>
+    <a class="btn btn-primary" href="{{ url_for('admin.patient_edit', patient_id=patient.id) }}">✎ Edit</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="detail-header">
+    {% if patient.photo %}
+      <img class="detail-photo" src="{{ url_for('main.uploaded_file', filename=patient.photo) }}" alt="Patient photo">
+    {% else %}
+      <div class="detail-photo placeholder">{{ (patient.first_name or '?')[:1]|upper }}</div>
+    {% endif %}
+    <div>
+      <h2 style="margin-bottom:4px;">{{ patient.first_name }} {{ patient.last_name }}</h2>
+      <span class="badge badge-neutral">National ID: {{ patient.national_id }}</span>
+      <span class="badge badge-neutral">{{ patient.gender|capitalize }}</span>
+      {% if patient.age is not none %}<span class="badge badge-neutral">{{ patient.age }} years</span>{% endif %}
+    </div>
+  </div>
+
+  <dl class="kv">
+    <dt>Birth date</dt><dd>{{ patient.birth_date or '—' }}</dd>
+    <dt>Age (calculated)</dt><dd>{{ patient.age if patient.age is not none else '—' }}</dd>
+    <dt>Gender</dt><dd>{{ patient.gender|capitalize }}</dd>
+    <dt>Pregnancy status</dt><dd>{{ 'Yes' if patient.pregnancy_status else 'No' }}</dd>
+    <dt>Lactation status</dt><dd>{{ 'Yes' if patient.lactation_status else 'No' }}</dd>
+    <dt>Email</dt><dd>{{ patient.email or '—' }}</dd>
+    <dt>Phone</dt><dd>{{ patient.phone or '—' }}</dd>
+  </dl>
+</div>
+{% endblock %}

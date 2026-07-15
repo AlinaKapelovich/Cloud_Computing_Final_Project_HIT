@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% from 'shared/_components.html' import status_badge %}
+{% block page_title %}Prescriptions{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>My prescriptions</h1>
+    <p class="muted">{{ prescriptions|length }} prescription(s) created.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('doctor.select_patient') }}">🩺 New visit</a>
+</div>
+
+{% if prescriptions %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Patient</th><th>Diagnosis</th><th>Items</th><th>Status</th><th>PDF</th><th></th></tr></thead>
+    <tbody>
+      {% for p in prescriptions %}
+      <tr>
+        <td><strong>{{ p.patient_name }}</strong><br><span class="small muted">{{ p.patient_national_id }}</span></td>
+        <td class="muted">{{ p.diagnosis|truncate(40) or '—' }}</td>
+        <td>{{ p['items']|length }}</td>
+        <td>{{ status_badge(p.status) }}</td>
+        <td>{% if p.pdf_url %}<a href="{{ p.pdf_url }}" target="_blank" rel="noopener">Open</a>{% else %}—{% endif %}</td>
+        <td style="text-align:right;"><a class="btn btn-secondary btn-sm" href="{{ url_for('doctor.prescription_detail', prescription_id=p.id) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card"><div class="empty-state">
+  <div class="icon">📄</div>
+  <h3>No prescriptions yet</h3>
+  <p>Start a visit to create your first prescription.</p>
+  <a class="btn btn-primary" href="{{ url_for('doctor.select_patient') }}">🩺 Start a visit</a>
+</div></div>
+{% endif %}
+{% endblock %}

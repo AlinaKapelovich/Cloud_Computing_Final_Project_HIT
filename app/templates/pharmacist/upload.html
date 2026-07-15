@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% from 'shared/_forms.html' import render_field %}
+{% block page_title %}Upload prescription{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Upload handwritten prescription</h1>
+    <p class="muted">The image is validated (AI/heuristic) before OCR extracts the text.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('pharmacist.search') }}">← Back to search</a>
+</div>
+
+<div class="card">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="form-grid">
+      {{ render_field(form.national_id, placeholder='Link to a patient (optional)') }}
+      {{ render_field(form.image) }}
+    </div>
+    <div class="form-actions">
+      {{ form.submit(class_='btn btn-primary') }}
+    </div>
+  </form>
+  <p class="small muted" style="margin-top:10px;">
+    Pipeline: <strong>AI document validation → OCR → pharmacist review → dispense</strong>.
+    Each step has a fallback, so the flow works even without external AI/OCR keys.
+  </p>
+</div>
+{% endblock %}

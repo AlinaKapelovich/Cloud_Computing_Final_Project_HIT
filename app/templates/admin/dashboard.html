@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% from 'shared/_components.html' import stat_cards, action_card %}
+{% block page_title %}Admin dashboard{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Admin dashboard</h1>
+    <p class="muted">Manage patient records for the clinic.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('admin.patient_create') }}">➕ New patient</a>
+</div>
+
+{{ stat_cards(stats) }}
+
+<div class="grid cols-3" style="margin-top:20px;">
+  {{ action_card('👥', 'Patient list', 'View, search and edit all patient records.', 'admin.patients_list', 'Open') }}
+  {{ action_card('➕', 'Register patient', 'Create a new patient record with demographics and contact details.', 'admin.patient_create', 'Create') }}
+  {{ action_card('🩺', 'Clinical workflow', 'Doctors create visits and prescriptions from these patient records.', None) }}
+</div>
+{% endblock %}

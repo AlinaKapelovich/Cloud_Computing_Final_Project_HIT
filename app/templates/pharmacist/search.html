@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% from 'shared/_components.html' import status_badge %}
+{% from 'shared/_consult_panel.html' import consult_panel %}
+{% block page_title %}Find patient{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Pharmacy — patient lookup</h1>
+    <p class="muted">Search a patient by national ID to view and dispense prescriptions.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('pharmacist.upload') }}">🖼 Upload handwritten</a>
+</div>
+
+<div class="card">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ national_id }}" placeholder="Enter patient national ID"
+           style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+</div>
+
+{% if national_id and not patient %}
+  <div class="card"><div class="empty-state">
+    <div class="icon">🔍</div>
+    <h3>No patient found for “{{ national_id }}”</h3>
+    <p>Check the national ID, or the patient may not be registered yet.</p>
+  </div></div>
+{% endif %}
+
+{% if patient %}
+  <div class="card">
+    <div class="detail-header" style="justify-content:space-between;">
+      <div>
+        <h2 style="margin-bottom:4px;">{{ patient.first_name }} {{ patient.last_name }}</h2>
+        <span class="badge badge-neutral">National ID: {{ patient.national_id }}</span>
+        <span class="badge badge-neutral">{{ patient.gender|capitalize }}</span>
+        {% if patient.age is not none %}<span class="badge badge-neutral">{{ patient.age }} years</span>{% endif %}
+        {% if patient.pregnancy_status %}<span class="badge badge-cancelled">Pregnant</span>{% endif %}
+        {% if patient.lactation_status %}<span class="badge badge-open">Lactating</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Digital prescriptions</div>
+    {% if digital %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Diagnosis</th><th>Medications</th><th>Doctor</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for p in digital %}
+          <tr>
+            <td>{{ p.diagnosis|truncate(40) or '—' }}</td>
+            <td>
+              {# The pharmacist must see exactly what they are dispensing, not just a count. #}
+              {% for item in p['items'] %}
+                <div class="med-line">
+                  <strong>{{ item.drug_name }}</strong>
+                  <span class="small muted">{{ item.dosage }}{% if item.frequency %} · {{ item.frequency }}{% endif %}{% if item.duration %} · {{ item.duration }}{% endif %}</span>
+                  {% if item.notes %}<div class="small muted">↳ {{ item.notes }}</div>{% endif %}
+                </div>
+              {% else %}
+                <span class="muted">—</span>
+              {% endfor %}
+            </td>
+            <td class="small muted">{{ p.doctor_name }}</td>
+            <td>{{ status_badge(p.status) }}</td>
+            <td style="text-align:right;">
+              {% if p.status == 'open' %}
+                <form method="post" action="{{ url_for('pharmacist.dispense_prescription', prescription_id=p.id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-primary btn-sm" type="submit">Dispense</button>
+                </form>
+              {% endif %}
+              {% if p.pdf_url %}<a class="btn btn-secondary btn-sm" href="{{ p.pdf_url }}" target="_blank" rel="noopener">PDF</a>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="muted small">No digital prescriptions for this patient.</p>
+    {% endif %}
+  </div>
+
+  {% if uploads %}
+  <div class="card">
+    <div class="card-title">Uploaded (handwritten) prescriptions</div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Uploaded</th><th>OCR source</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for u in uploads %}
+          <tr>
+            <td class="small muted">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at.strftime is defined else u.created_at }}</td>
+            <td>{{ u.ocr_source or '—' }}</td>
+            <td>{{ status_badge(u.status) }}</td>
+            <td style="text-align:right;"><a class="btn btn-secondary btn-sm" href="{{ url_for('pharmacist.review_upload', upload_id=u.id) }}">Review</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {{ consult_panel('/api/consult/side-effects', 'Drug side-effects consultation', 'e.g. amoxicillin', button='Check side-effects') }}
+{% endif %}
+{% endblock %}

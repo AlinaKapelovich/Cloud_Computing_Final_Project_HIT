@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% from 'shared/_forms.html' import render_field %}
+{% block page_title %}Sign in{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="logo">✚</div>
+      <h1>{{ APP_NAME }}</h1>
+      <p class="muted small">{{ APP_TAGLINE }}</p>
+    </div>
+
+    {% include 'shared/_flashes.html' %}
+
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ render_field(form.email, placeholder='you@example.com') }}
+      {{ render_field(form.password, placeholder='••••••••') }}
+      <div class="form-actions">
+        {{ form.submit(class_='btn btn-primary btn-block') }}
+      </div>
+    </form>
+
+    <div class="demo-hint">
+      <strong>Demo accounts</strong> (password <code>demo1234</code>):<br>
+      <code>admin@example.com</code> · <code>doctor@example.com</code> · <code>pharmacist@example.com</code>
+    </div>
+  </div>
+</div>
+{% endblock %}

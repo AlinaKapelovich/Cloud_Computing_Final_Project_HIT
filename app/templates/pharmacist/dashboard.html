@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% from 'shared/_components.html' import stat_cards, action_card, status_badge %}
+{% block page_title %}Pharmacist dashboard{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Pharmacist dashboard</h1>
+    <p class="muted">Dispense prescriptions and process handwritten uploads.</p>
+  </div>
+  {% if 'pharmacist.search' in endpoints %}
+    <a class="btn btn-primary" href="{{ url_for('pharmacist.search') }}">🔎 Find patient</a>
+  {% endif %}
+</div>
+
+{{ stat_cards(stats) }}
+
+<div class="grid cols-3" style="margin-top:20px;">
+  {{ action_card('🔎', 'Find patient', 'Search a patient by national ID to see their prescriptions.',
+      'pharmacist.search' if 'pharmacist.search' in endpoints else None, 'Search') }}
+  {{ action_card('🖼', 'Upload prescription', 'Upload a handwritten prescription, validate it and run OCR.',
+      'pharmacist.upload' if 'pharmacist.upload' in endpoints else None, 'Upload') }}
+  {{ action_card('💊', 'Side-effects consultation', 'Check drug side-effects and clinical research.',
+      'pharmacist.search' if 'pharmacist.search' in endpoints else None, 'Consult') }}
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <div class="card-title">Recent handwritten uploads</div>
+  {% if recent_uploads %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Uploaded</th><th>Patient</th><th>OCR source</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for u in recent_uploads %}
+          <tr>
+            <td class="small muted">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at.strftime is defined else u.created_at }}</td>
+            <td>{{ u.patient_name or u.patient_national_id or 'Not linked' }}</td>
+            <td class="small muted">{{ u.ocr_source or '—' }}</td>
+            <td>{{ status_badge(u.status) }}</td>
+            <td style="text-align:right;">
+              <a class="btn btn-secondary btn-sm" href="{{ url_for('pharmacist.review_upload', upload_id=u.id) }}">Review</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state" style="padding:28px 12px;">
+      <div class="icon">🖼</div>
+      <p>No handwritten prescriptions uploaded yet.</p>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('pharmacist.upload') }}">Upload one</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

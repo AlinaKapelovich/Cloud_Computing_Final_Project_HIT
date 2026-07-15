@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block page_title %}File too large{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="empty-state">
+    <div class="icon">📦</div>
+    <h1>413 — File too large</h1>
+    <p>The file you uploaded exceeds the {{ limit_mb }} MB limit. Please upload a smaller image or PDF.</p>
+    <a class="btn btn-primary" href="{{ url_for('pharmacist.upload') if current_user.is_authenticated and current_user.role == 'pharmacist' else url_for('main.dashboard') if current_user.is_authenticated else url_for('auth.login') }}">Try again</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{# Reusable WTForms field renderers for consistent, styled forms. #}
+
+{% macro render_field(field, placeholder='') %}
+  {% if field.type == 'BooleanField' %}
+    <div class="field checkbox">
+      {{ field() }}
+      {{ field.label() }}
+    </div>
+  {% else %}
+    <div class="field">
+      {{ field.label() }}
+      {{ field(placeholder=placeholder) }}
+      {% for error in field.errors %}
+        <span class="error">{{ error }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}

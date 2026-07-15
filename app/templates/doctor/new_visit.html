@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% from 'shared/_forms.html' import render_field %}
+{% block page_title %}New visit{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>New visit</h1>
+    <p class="muted">{{ patient.first_name }} {{ patient.last_name }} · National ID {{ patient.national_id }}</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('doctor.select_patient') }}">← Choose another patient</a>
+</div>
+
+<div class="card">
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="field">
+      {{ form.complaints.label() }}
+      {{ form.complaints(rows=4, placeholder='Patient-reported symptoms and complaints...') }}
+      {% for e in form.complaints.errors %}<span class="error">{{ e }}</span>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.diagnosis.label() }}
+      {{ form.diagnosis(rows=4, placeholder='Clinical diagnosis...') }}
+      {% for e in form.diagnosis.errors %}<span class="error">{{ e }}</span>{% endfor %}
+    </div>
+    <div class="form-actions">
+      {{ form.submit(class_='btn btn-primary') }}
+      <a class="btn btn-secondary" href="{{ url_for('doctor.dashboard') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{# Renders flashed messages as styled alerts. Categories map to alert-* classes. #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for category, message in messages %}
+        {% set css = {'success':'alert-success','danger':'alert-danger','warning':'alert-warning','info':'alert-info'}.get(category, 'alert-info') %}
+        <div class="alert {{ css }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

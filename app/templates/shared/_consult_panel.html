@@ -1,0 +1,15 @@
+{# Reusable consultation panel. `endpoint` is a JSON API route; results render below. #}
+{% macro consult_panel(endpoint, title, placeholder, prefill='', button='Consult') %}
+<div class="card">
+  <div class="card-title">🔎 {{ title }}</div>
+  <p class="small muted">Consults cloud services (Tavily / OpenFDA) and ClinicalTrials.gov. Falls back gracefully when a service is unavailable.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <input type="text" id="consult-input" value="{{ prefill }}" placeholder="{{ placeholder }}"
+           style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;">
+    <button type="button" class="btn btn-primary"
+            onclick="medcloudConsult('{{ endpoint }}','consult-input','consult-output')">{{ button }}</button>
+  </div>
+  <div id="consult-output" style="margin-top:12px;"></div>
+</div>
+<script src="{{ url_for('static', filename='js/consult.js') }}"></script>
+{% endmacro %}

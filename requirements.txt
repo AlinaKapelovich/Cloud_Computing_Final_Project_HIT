@@ -1,0 +1,29 @@
+# MedCloud — Python dependencies
+# Core web framework (Controllers = Flask routes, Views = Jinja2 templates)
+Flask>=3.0
+Flask-WTF>=1.2          # WTForms integration + CSRF protection for all forms
+Flask-Login>=0.6        # Session-based authentication and role handling
+email-validator>=2.0    # Email field validation for WTForms
+python-dotenv>=1.0      # Load configuration from a .env file (never commit real .env)
+
+# Cloud NoSQL database (MongoDB Atlas) with an in-memory fallback for demo mode
+pymongo>=4.6            # Official MongoDB driver
+mongomock>=4.1          # In-memory Mongo used automatically when no MONGO_URI is set
+
+# Prescription PDF generation and image handling
+reportlab>=4.0          # Generate prescription PDFs
+Pillow>=10.0            # Image inspection for the AI document validator heuristics
+
+# Cloud service integrations (all wrapped in app/services/, all have fallbacks)
+cloudinary>=1.40        # Cloud storage for generated prescription PDFs
+requests>=2.31          # HTTP client for Tavily / OpenFDA / ClinicalTrials.gov / OCR / vision
+
+# Optional local OCR fallback (used only if the cloud OCR service is unavailable).
+# pytesseract also requires the Tesseract binary to be installed on the machine.
+pytesseract>=0.3.10
+
+# Production WSGI server (used by Docker / Render; the dev server is used locally).
+gunicorn>=21.2
+
+# Testing (validation phase of PIV). Run with: python -m pytest
+pytest>=8.0

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% from 'shared/_components.html' import status_badge %}
+{% block page_title %}Review upload{% endblock %}
+{% set ai = upload.ai_document_validation_result or {} %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Review handwritten prescription</h1>
+    <p class="muted">Validate the AI/OCR result, correct the text if needed, then dispense.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('pharmacist.search', q=upload.patient_national_id or '') }}">← Back</a>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <div class="card-title">Uploaded image</div>
+    {% if upload.image_path.lower().endswith('.pdf') %}
+      <a class="btn btn-secondary" href="{{ url_for('main.uploaded_file', filename=upload.image_path) }}" target="_blank" rel="noopener">Open PDF</a>
+    {% else %}
+      <img src="{{ url_for('main.uploaded_file', filename=upload.image_path) }}" alt="Prescription upload"
+           style="max-width:100%;border:1px solid var(--border);border-radius:10px;">
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">AI document validation</div>
+    {% if ai.valid is sameas true %}
+      <span class="badge badge-live">✓ Looks like a document</span>
+    {% elif ai.valid is sameas false %}
+      <span class="badge badge-cancelled">✗ Does not look like a document</span>
+    {% else %}
+      <span class="badge badge-fallback">Validation unavailable — manual check</span>
+    {% endif %}
+    <p class="small muted" style="margin-top:8px;">Method: <strong>{{ ai.method or 'n/a' }}</strong></p>
+    <p class="small">{{ ai.message or '' }}</p>
+
+    <div class="card-title" style="margin-top:16px;">OCR</div>
+    <p class="small muted">Source: <strong>{{ upload.ocr_source or 'n/a' }}</strong></p>
+    {% if upload.ocr_message %}<div class="alert alert-info">{{ upload.ocr_message }}</div>{% endif %}
+
+    <div style="margin-top:8px;">
+      <span class="badge badge-neutral">Status:</span> {{ status_badge(upload.status) }}
+      <span class="badge badge-neutral">Source: handwritten upload</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <form method="post" action="{{ url_for('pharmacist.dispense_upload', upload_id=upload.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="ocr_text">Prescription text (review / correct before dispensing)</label>
+      <textarea id="ocr_text" name="ocr_text" rows="6" {{ 'readonly' if upload.status == 'dispensed' else '' }}>{{ upload.ocr_text }}</textarea>
+    </div>
+    <div class="form-actions">
+      {% if upload.status == 'open' %}
+        <button class="btn btn-primary" type="submit">✓ Confirm & dispense</button>
+      {% else %}
+        <span class="badge badge-dispensed">Dispensed by {{ upload.dispensed_by }}</span>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

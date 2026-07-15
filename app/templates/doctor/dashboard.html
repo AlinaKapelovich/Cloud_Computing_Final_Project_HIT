@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% from 'shared/_components.html' import stat_cards, action_card %}
+{% block page_title %}Doctor dashboard{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Doctor dashboard</h1>
+    <p class="muted">Create visits, write prescriptions and consult medical sources.</p>
+  </div>
+  {% if 'doctor.select_patient' in endpoints %}
+    <a class="btn btn-primary" href="{{ url_for('doctor.select_patient') }}">🩺 New visit</a>
+  {% endif %}
+</div>
+
+{{ stat_cards(stats) }}
+
+<div class="grid cols-3" style="margin-top:20px;">
+  {{ action_card('🩺', 'Start a visit', 'Select a patient and record complaints and diagnosis.',
+      'doctor.select_patient' if 'doctor.select_patient' in endpoints else None, 'Start') }}
+  {{ action_card('📄', 'Prescriptions', 'Review prescriptions you have created and their PDFs.',
+      'doctor.prescriptions_list' if 'doctor.prescriptions_list' in endpoints else None, 'View') }}
+  {{ action_card('🔎', 'Diagnosis consultation', 'Consult Tavily search and ClinicalTrials.gov about a diagnosis.',
+      'doctor.select_patient' if 'doctor.select_patient' in endpoints else None, 'Consult') }}
+</div>
+{% endblock %}

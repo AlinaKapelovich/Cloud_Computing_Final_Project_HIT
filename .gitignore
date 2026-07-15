@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Environment / secrets — never commit real credentials
+.env
+
+# Runtime artefacts
+uploads/
+generated_pdfs/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Course materials are references only, not part of the app, and contain personal
+# information (e.g. a classmate's phone number in a WhatsApp export) — keep out of git.
+הוראות/
+תמלולי הרצאות/

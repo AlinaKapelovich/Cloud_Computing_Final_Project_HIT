@@ -1,0 +1,38 @@
+{# Role-based navigation sidebar. Only links to implemented endpoints are shown. #}
+{% macro navlink(endpoint, icon, label, match=None) %}
+  {% set active = (request.endpoint == endpoint) or (match and request.endpoint and request.endpoint.startswith(match)) %}
+  <a class="nav-link {{ 'active' if active else '' }}" href="{{ url_for(endpoint) }}">
+    <span class="ic">{{ icon }}</span><span>{{ label }}</span>
+  </a>
+{% endmacro %}
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo">✚</div>
+    <div>
+      <div class="brand-name">{{ APP_NAME }}</div>
+      <div class="brand-tag">{{ APP_TAGLINE }}</div>
+    </div>
+  </div>
+
+  {% if current_user.role == 'admin' %}
+    <div class="nav-section">Administration</div>
+    {{ navlink('admin.dashboard', '▦', 'Dashboard') }}
+    {{ navlink('admin.patients_list', '👥', 'Patients', match='admin.patient') }}
+    {{ navlink('admin.patient_create', '➕', 'New patient') }}
+  {% elif current_user.role == 'doctor' %}
+    <div class="nav-section">Clinical</div>
+    {{ navlink('doctor.dashboard', '▦', 'Dashboard') }}
+    {% if 'doctor.select_patient' in endpoints %}{{ navlink('doctor.select_patient', '🩺', 'New visit', match='doctor.') }}{% endif %}
+    {% if 'doctor.prescriptions_list' in endpoints %}{{ navlink('doctor.prescriptions_list', '📄', 'Prescriptions') }}{% endif %}
+  {% elif current_user.role == 'pharmacist' %}
+    <div class="nav-section">Pharmacy</div>
+    {{ navlink('pharmacist.dashboard', '▦', 'Dashboard') }}
+    {% if 'pharmacist.search' in endpoints %}{{ navlink('pharmacist.search', '🔎', 'Find patient') }}{% endif %}
+    {% if 'pharmacist.upload' in endpoints %}{{ navlink('pharmacist.upload', '🖼', 'Upload prescription') }}{% endif %}
+  {% endif %}
+
+  <div class="spacer"></div>
+  <div class="nav-section">Session</div>
+  <a class="nav-link" href="{{ url_for('auth.logout') }}"><span class="ic">⎋</span><span>Log out</span></a>
+</aside>

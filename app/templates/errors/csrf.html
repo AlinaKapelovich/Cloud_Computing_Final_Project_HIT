@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block page_title %}Session expired{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="empty-state">
+    <div class="icon">⏱</div>
+    <h1>Session expired</h1>
+    <p>Your form security token was missing or expired, so the request was blocked
+       (CSRF protection). Please log in again and resubmit the form.</p>
+    <p class="small muted">{{ reason }}</p>
+    <a class="btn btn-primary" href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('auth.login') }}">Continue</a>
+  </div>
+</div>
+{% endblock %}

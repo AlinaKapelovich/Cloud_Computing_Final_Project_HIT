@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block page_title %}Server error{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="empty-state">
+    <div class="icon">⚠️</div>
+    <h1>500 — Something went wrong</h1>
+    <p>An unexpected error occurred. Please try again.</p>
+    <a class="btn btn-primary" href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('auth.login') }}">Back to safety</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+# Keep the build context small and free of secrets / large reference material.
+.git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+uploads/
+generated_pdfs/
+*.log
+
+# Course materials are references only — not part of the running app.
+הוראות/
+תמלולי הרצאות/
+*.zip
+*.pdf
+*.docx

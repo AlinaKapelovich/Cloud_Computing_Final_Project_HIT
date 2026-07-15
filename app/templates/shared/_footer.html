@@ -1,0 +1,17 @@
+{# Footer shows the active database mode and cloud-service status (live vs fallback).
+   This makes it obvious during the defense which integrations are real and which
+   are running in their documented fallback mode. #}
+<footer class="footer">
+  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <span>© {{ current_year }} {{ APP_NAME }} — {{ APP_TAGLINE }}</span>
+    <span>Database: <strong>{{ db_mode }}</strong></span>
+  </div>
+  <div class="status-strip">
+    {% for svc in service_status %}
+      <span class="status-pill" title="{{ svc.detail }}">
+        <span class="status-dot {{ 'live' if svc.live else 'fallback' }}"></span>
+        {{ svc.name }}: {{ svc.detail }}
+      </span>
+    {% endfor %}
+  </div>
+</footer>

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block page_title %}Access denied{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="empty-state">
+    <div class="icon">🚫</div>
+    <h1>403 — Access denied</h1>
+    <p>Your role does not have permission to view this page.</p>
+    <a class="btn btn-primary" href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('auth.login') }}">Go to my dashboard</a>
+  </div>
+</div>
+{% endblock %}
