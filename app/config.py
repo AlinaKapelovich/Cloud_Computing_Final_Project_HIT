@@ -91,3 +91,10 @@ class Config:
     KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "").strip()
     OLLAMA_ENABLED = _flag("OLLAMA_ENABLED", "0")
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
+
+    # --- Live-verification tracking (see docs/LIVE_VERIFICATION.md) ---
+    # Comma-separated service keys a human adds ONLY after manually confirming a real,
+    # successful live call and recording it (with date + result) in that checklist —
+    # e.g. "mongodb,tavily". Never set by the app itself and never set during tests, so
+    # a mocked test can never make the footer/status panel claim a service is "Verified".
+    LIVE_VERIFIED_SERVICES = os.getenv("LIVE_VERIFIED_SERVICES", "").strip()

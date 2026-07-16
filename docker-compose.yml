@@ -3,7 +3,7 @@
 # the database run as separate services that talk over a network.
 #
 # Run:   docker compose up --build
-# Visit: http://localhost:5000   (demo users are seeded automatically)
+# Visit: http://localhost:5000   (demo users are seeded automatically — see below)
 #
 # The app still works if you remove the mongo service — it falls back to an in-memory
 # database. With mongo present, data persists in the named volume.
@@ -17,6 +17,12 @@ services:
       MONGO_URI: "mongodb://mongo:27017"
       MONGO_DB_NAME: "medcloud"
       SECRET_KEY: "compose-dev-secret-change-me"
+      # MONGO_URI is set above (a real database), so demo users are NOT seeded
+      # automatically by default (see app/services/bootstrap.py) — this compose file is
+      # an academic demo, so we opt in explicitly rather than leaving the login page
+      # broken. Never do this against a real, persistent production database.
+      SEED_DEMO_USERS: "true"
+      DEMO_PASSWORD: "demo1234"
       # External service keys are intentionally empty here -> documented fallbacks are used.
     depends_on:
       - mongo

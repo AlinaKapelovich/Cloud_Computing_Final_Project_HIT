@@ -1,10 +1,14 @@
 # Validation Checklist — MedCloud
 
 ## Automated tests
-- [x] `python -m pytest` → **64 passed** in ~88s, **zero real network calls** (see
-      `tests/conftest.py::block_real_network` — enforced even if the machine running the
-      suite has internet access or real API keys set). Per-test "setup" cost (~1.8s) is
-      Werkzeug password hashing + fresh app/in-memory-DB creation, not network I/O.
+- [x] `python -m pytest` (run three consecutive times) → **78 passed, 1 deselected**
+      each time, **zero real network calls and zero real Tesseract invocations** (see
+      `tests/conftest.py::block_real_network` and `::block_real_tesseract` — enforced
+      even if the machine running the suite has internet access, real API keys, or a
+      real Tesseract binary installed). The 1 deselected test is the optional
+      `@pytest.mark.integration` real-Tesseract check (see `tests/test_ocr_provider.py`),
+      excluded by default (`pytest.ini: addopts = -m "not integration"`) and runnable
+      explicitly with `pytest -m integration`.
 - [x] `python -m compileall app run.py scripts` → clean.
 - [x] `pip check` → no broken requirements.
 - [x] Regression test: pharmacist can open a locally-stored prescription PDF (was a 403 bug).
@@ -15,6 +19,13 @@
       unavailable-with-manual-confirmation.
 - [x] Consultation RBAC tests: Doctor-only diagnosis endpoint, Pharmacist-only
       side-effects endpoint, cross-role denial for both.
+- [x] Service-status accuracy tests: OCR recognizes `HUGGINGFACE_API_TOKEN` (not only
+      `OCR_API_URL`); ClinicalTrials.gov never reports "Verified" just for being public;
+      "Configured" (credentials present) is never conflated with "Verified" (a real
+      call confirmed) — see `tests/test_service_status.py`.
+- [x] Demo-seeding tests: `SEED_DEMO_USERS=true` against a non-demo-mode database (the
+      exact scenario `docker-compose.yml` now relies on) seeds all three roles with
+      working passwords — see `tests/test_bootstrap_seeding.py`.
 
 ## Functional
 - [x] App starts with no credentials (`python run.py`).
@@ -87,13 +98,26 @@
 ## Docker / deployment
 - [x] `Dockerfile`, `docker-compose.yml`, `render.yaml`, `.dockerignore` present.
 - [x] Docker installs Tesseract for the OCR fallback.
+- [x] `docker-compose.yml` sets `SEED_DEMO_USERS: "true"` and `DEMO_PASSWORD: "demo1234"`
+      explicitly (a real `MONGO_URI` is configured for the `mongo` service, so without
+      this the login page would be unusable on a fresh container — see
+      `tests/test_bootstrap_seeding.py` for the underlying logic proof).
 - [ ] **NOT VERIFIED:** `docker compose config`, `docker build .`, `docker compose up --build`
       were **not executed** — Docker is not installed in this development environment
       (checked: no `docker` binary, no Docker Desktop process running). Run these on a
-      machine with Docker before the defense.
+      machine with Docker before the defense, and confirm all three demo logins work on
+      a fresh container per `docs/LIVE_VERIFICATION.md`.
 - [ ] **NOT VERIFIED:** Render deployment. No deployed URL exists yet — do not claim a
       live deployment until one has actually been created and its `/health`, login, PDF
-      access, and upload flow have been checked against the real deployed URL.
+      access, and upload flow have been checked against the real deployed URL (record in
+      `docs/LIVE_VERIFICATION.md`).
+
+## Submission packaging
+- [x] `scripts/build_submission_zip.py` builds a clean archive containing only
+      `app/`, `docs/`, `tests/`, `scripts/`, and configuration templates. Verified by
+      running it: 106 files written, confirmed absent from the archive: `.git`, `.env`,
+      `uploads/`, `generated_pdfs/`, `__pycache__`, `.pytest_cache`, virtual
+      environments, and the course-material folders.
 
 ## UI/UX verification method
 - [x] Every page rendered and asserted via the test client (no 500s, styled error pages).
@@ -103,8 +127,18 @@
       not connected in this environment). Do the manual demo path in `README.md` yourself
       before the defense to see the actual rendered pages.
 
+## Live cloud verification
+- [ ] **NOT DONE:** `docs/LIVE_VERIFICATION.md` — a checklist of real, successful calls
+      to each mandatory service (MongoDB Atlas persistence, Cloudinary PDF upload,
+      Tavily, Hugging Face OCR with a real image, ClinicalTrials.gov), each requiring a
+      recorded date and result. Every row is currently "not yet tested" — this sandbox
+      has no outbound internet access. Complete this on a machine with real credentials
+      and internet access before claiming any provider works live.
+
 ## Defense readiness
 - [x] `DEFENSE_GUIDE.md` covers all required concepts + how to explain a random file.
 - [x] Every folder/file maps to a role in MVC and a requirement.
-- [x] Footer shows live vs fallback service status (reflects current runtime
-      configuration, not a claim that any provider was tested live).
+- [x] Footer shows a three-state **Fallback / Configured / Verified** status per service
+      (see `app/utils/service_status.py`), never claiming "live" from configuration
+      alone — "Verified" only ever comes from a human completing
+      `docs/LIVE_VERIFICATION.md` and setting `LIVE_VERIFIED_SERVICES`.

@@ -56,19 +56,25 @@ seeded automatically.
 ## Tests
 
 ```bash
-python -m pytest        # 64 tests, no credentials needed, zero real network calls
+python -m pytest        # 78 tests, no credentials needed, zero real network/Tesseract calls
 ```
 
 The suite drives the real flows through Flask's test client: auth/roles, patient CRUD
 (including search), visit→prescription→PDF, RBAC on the consultation endpoints, mocked
 provider tests (Hugging Face OCR, Tavily, OpenFDA, ClinicalTrials.gov, Cloudinary), the
-AI-validator dispense-enforcement states, and the pharmacist upload→AI validation→OCR→
-review→dispense flow, plus a render sweep of every page for every role.
+AI-validator dispense-enforcement states, service-status accuracy, demo-user seeding
+policy, and the pharmacist upload→AI validation→OCR→review→dispense flow, plus a render
+sweep of every page for every role.
 
-`tests/conftest.py::block_real_network` replaces `requests.post`/`requests.get` with a
-stub that raises unless a test explicitly re-mocks it — so the suite never makes a real
-outbound call to Tavily/OpenFDA/ClinicalTrials.gov/Hugging Face/a hosted vision endpoint,
-even on a machine with internet access and real API keys set.
+`tests/conftest.py::block_real_network` replaces `requests.post`/`requests.get`, and
+`::block_real_tesseract` replaces the real Tesseract call, each with a stub unless a test
+explicitly opts out — so the standard suite never makes a real outbound call or invokes
+the real Tesseract binary, even on a machine with internet access, real API keys, and
+Tesseract installed. A genuine real-Tesseract check exists as an opt-in integration test:
+
+```bash
+python -m pytest -m integration   # runs only the real-Tesseract check; skips itself if not installed
+```
 
 ---
 
@@ -78,6 +84,12 @@ even on a machine with internet access and real API keys set.
 docker compose up --build
 # open http://localhost:5000  (MongoDB runs in a second container; data persists)
 ```
+
+`docker-compose.yml` points the app at a real MongoDB container (`MONGO_URI` is set), so
+demo-user auto-seeding would normally be skipped (see "Demo user seeding" above) — leaving
+a fresh container with no working login. To keep the demo usable, compose explicitly sets
+`SEED_DEMO_USERS: "true"` and `DEMO_PASSWORD: "demo1234"`, so `admin@/doctor@/pharmacist@example.com`
+work immediately on a fresh container. Never do this against a real production database.
 
 Or just the app image:
 
@@ -166,11 +178,27 @@ app/services/              database, patient, prescription, pdf, cloud_storage, 
 app/forms/                 WTForms (validation + CSRF)
 app/templates/, app/static/
 scripts/seed_users.py      Seed demo users into a real Atlas DB
+scripts/build_submission_zip.py  Package a clean submission archive (see below)
 docs/                      PRD, ARCHITECTURE, USER_FLOWS, DATA_MODEL, CLOUD_SERVICES,
                            UI_UX_PLAN, IMPLEMENTATION_ROADMAP, VALIDATION_CHECKLIST,
-                           DEFENSE_GUIDE
+                           DEFENSE_GUIDE, LIVE_VERIFICATION
 Dockerfile, docker-compose.yml, render.yaml
 ```
+
+---
+
+## Packaging a submission
+
+```bash
+python scripts/build_submission_zip.py
+# or specify an output path: python scripts/build_submission_zip.py my_submission.zip
+```
+
+Builds a ZIP containing only `app/`, `docs/`, `tests/`, `scripts/`, and configuration
+templates (`requirements.txt`, `.env.example`, `Dockerfile`, etc.). Excludes `.git`,
+`.env`, `uploads/`, `generated_pdfs/`, `__pycache__`, `.pytest_cache`, virtual
+environments, and the course-material/lecture-transcript folders — and verifies none of
+them ended up in the archive before reporting success.
 
 ---
 
@@ -180,6 +208,12 @@ Full planning and defense material is in [`docs/`](docs/), most importantly
 [`docs/DEFENSE_GUIDE.md`](docs/DEFENSE_GUIDE.md) — short oral answers for every concept the
 examiner asks (cloud computing, MVC, HTTP vs REST, API, Docker, MongoDB/NoSQL, scaling,
 monolithic vs distributed, Data Lake vs Database, etc.) and how to explain any code file.
+
+[`docs/CLOUD_SERVICES.md`](docs/CLOUD_SERVICES.md) documents what's *implemented* (and
+mocked-tested) for each cloud integration; [`docs/LIVE_VERIFICATION.md`](docs/LIVE_VERIFICATION.md)
+is the separate checklist for what's actually been *proven to work live* — currently
+every row is "not yet tested" (no outbound internet in the development environment).
+Complete it yourself with real credentials before claiming any provider works live.
 
 ---
 

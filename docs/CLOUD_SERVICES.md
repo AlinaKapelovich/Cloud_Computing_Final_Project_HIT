@@ -4,6 +4,10 @@ Every external service is isolated behind a wrapper in `app/services/`. Controll
 call these APIs directly. Each wrapper handles: missing key, timeout, invalid response,
 empty result, service unavailable — always degrading to a documented fallback.
 
+To actually perform and record a real live test for a mandatory service, see
+[`docs/LIVE_VERIFICATION.md`](LIVE_VERIFICATION.md) — this document describes what's
+*implemented*, that one tracks what's *proven to work live*.
+
 ## Status legend (used consistently below)
 - **Mandatory — implemented and tested (mocked).** Real request/response handling is
   written against the provider's documented contract and is exercised by a pytest test
@@ -36,8 +40,22 @@ claim is made anywhere in this documentation. What **is** verified:
 4. `python -m pytest`'s standard run never makes a real network call — see
    `tests/conftest.py::block_real_network` — so this is true in CI too, not just here.
 
-If you configure real credentials and confirm a provider live, update the status for
-that row to "tested live" and note the date — do not assume it from this document alone.
+### Runtime status badge (Fallback / Configured / Verified)
+The app's own footer (and `app/utils/service_status.py`) shows a live, three-state badge
+per service, computed at runtime, which is a separate (and stricter) thing from the
+"Tested live" notes below:
+- **Fallback** — no credentials configured; using the documented local fallback.
+- **Configured** — credentials ARE present, so a real call will be attempted, but this
+  is *not* a claim that one has ever succeeded. A keyless public API (ClinicalTrials.gov)
+  is also only ever "Configured", never elevated just for being reachable.
+- **Verified** — a human has completed `docs/LIVE_VERIFICATION.md` for that service
+  (recorded a real, successful call, with date and result) and added its key to the
+  `LIVE_VERIFIED_SERVICES` env var. This is never set automatically by the app, and
+  pytest never sets it — a mocked test can never make a service appear "Verified".
+
+**Do not update this document to claim a provider is "tested live" without first
+completing the corresponding row in `docs/LIVE_VERIFICATION.md`** — that file, not this
+one, is the source of truth for real live-testing results.
 
 ---
 

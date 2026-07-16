@@ -1,11 +1,17 @@
 """ocr_service.py — mocked tests for the fallback chain:
 Hugging Face -> generic cloud OCR -> Tesseract -> manual transcription.
 
-No real network call is made (see tests/conftest.py::block_real_network). Each test
-explicitly monkeypatches requests.post/requests.get to simulate one provider's behavior.
+No real network call is made (see tests/conftest.py::block_real_network) and the real
+Tesseract binary is never invoked (see tests/conftest.py::block_real_tesseract) — so
+these results are deterministic regardless of what's installed on the machine running
+the suite. Each test explicitly monkeypatches requests.post/requests.get to simulate one
+provider's behavior. A genuine real-Tesseract check lives at the bottom of this file,
+marked @pytest.mark.integration (skipped by default — see pytest.ini).
 """
 import io
+import shutil
 
+import pytest
 from PIL import Image
 
 from app.services import ocr_service
@@ -54,10 +60,9 @@ def test_huggingface_cold_start_falls_back_to_next_provider(app, monkeypatch):
     with app.test_request_context():
         result = ocr_service.extract_text(image_path)
 
-    # No Tesseract binary in the test environment -> falls all the way to manual.
-    assert result["source"] in ("manual", "Tesseract (local)")
-    if result["source"] == "manual":
-        assert "manually" in result["message"].lower()
+    # Tesseract is deterministically mocked out (block_real_tesseract) -> falls to manual.
+    assert result["source"] == "manual"
+    assert "manually" in result["message"].lower()
 
 
 def test_huggingface_failure_falls_back_to_generic_cloud_ocr(app, monkeypatch):
@@ -81,8 +86,9 @@ def test_huggingface_failure_falls_back_to_generic_cloud_ocr(app, monkeypatch):
     assert result["source"] == "Cloud OCR"
 
 
-def test_no_cloud_provider_configured_falls_back_to_tesseract_or_manual(app):
-    """With no cloud provider configured, extract_text still returns a valid, non-crashing result."""
+def test_no_cloud_provider_configured_falls_back_to_manual(app):
+    """With no cloud provider configured (and Tesseract mocked out), extract_text
+    deterministically returns the manual-transcription fallback, not a crash."""
     app.config["HUGGINGFACE_API_TOKEN"] = ""
     app.config["OCR_API_URL"] = ""
     image_path = _sample_image_path(app)
@@ -90,7 +96,7 @@ def test_no_cloud_provider_configured_falls_back_to_tesseract_or_manual(app):
     with app.test_request_context():
         result = ocr_service.extract_text(image_path)
 
-    assert result["source"] in ("manual", "Tesseract (local)")
+    assert result["source"] == "manual"
     assert isinstance(result["text"], str)
 
 
@@ -117,3 +123,25 @@ def test_manual_transcription_text_can_be_saved_and_dispensed(pharmacist_client,
     # Either dispensed immediately (heuristic validated the plain white image) or blocked
     # pending confirmation — both are valid outcomes; either way the typed text is preserved.
     assert upload["ocr_text"] == manual_text
+
+
+@pytest.mark.integration
+def test_real_tesseract_binary_extracts_text_from_an_image(app):
+    """Optional integration test: exercises the REAL Tesseract binary (not mocked).
+
+    Skipped by default (pytest.ini: `addopts = -m "not integration"`). Run explicitly
+    with: pytest -m integration
+    If Tesseract is not installed on the machine running this, the test skips itself
+    rather than failing — its purpose is to confirm the real binary works when present,
+    not to require it.
+    """
+    if shutil.which("tesseract") is None:
+        pytest.skip("Tesseract binary not installed on this machine")
+
+    image_path = _sample_image_path(app)
+    with app.test_request_context():
+        result = ocr_service._tesseract(image_path)  # the real function, unmocked here
+
+    assert result is not None
+    assert result["source"] == "Tesseract (local)"
+    assert isinstance(result["text"], str)

@@ -210,7 +210,8 @@ table.data input[type=text]:focus { outline: none; border-color: var(--primary);
 .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem;
   padding: 4px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-.status-dot.live { background: var(--success); }
+.status-dot.verified { background: var(--success); }
+.status-dot.configured { background: var(--info); }
 .status-dot.fallback { background: var(--warning); }
 
 .footer { padding: 16px 26px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.82rem; background: var(--surface); }

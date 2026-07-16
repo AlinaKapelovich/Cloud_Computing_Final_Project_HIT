@@ -1,6 +1,9 @@
-{# Footer shows the active database mode and cloud-service status (live vs fallback).
-   This makes it obvious during the defense which integrations are real and which
-   are running in their documented fallback mode. #}
+{# Footer shows the active database mode and each cloud service's status: Fallback
+   (no credentials, using the documented local fallback), Configured (credentials
+   present, a real call will be attempted, but no live success has been confirmed), or
+   Verified (a human has recorded a real successful call in docs/LIVE_VERIFICATION.md).
+   This makes it obvious during the defense which integrations are real vs. fallback vs.
+   actually proven to work live — never overstated. #}
 <footer class="footer">
   <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
     <span>© {{ current_year }} {{ APP_NAME }} — {{ APP_TAGLINE }}</span>
@@ -9,8 +12,8 @@
   <div class="status-strip">
     {% for svc in service_status %}
       <span class="status-pill" title="{{ svc.detail }}">
-        <span class="status-dot {{ 'live' if svc.live else 'fallback' }}"></span>
-        {{ svc.name }}: {{ svc.detail }}
+        <span class="status-dot {{ svc.status|lower }}"></span>
+        {{ svc.name }}: {{ svc.detail }} ({{ svc.status }})
       </span>
     {% endfor %}
   </div>

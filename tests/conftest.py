@@ -13,6 +13,14 @@ tests that need to exercise a provider's success/failure path re-patch `requests
 later undoes this default). This also means every external-service code path degrades to
 its documented fallback by default, so the existing "graceful fallback" tests keep working
 unchanged — they are simply exercising the block instead of a real network failure.
+
+Tesseract policy: the `block_real_tesseract` autouse fixture below forces
+`ocr_service._tesseract()` to return None (as if the binary were not installed), so the
+standard suite never depends on whether Tesseract happens to be installed on the machine
+running it — it deterministically exercises the manual-transcription fallback instead.
+Tests marked `@pytest.mark.integration` opt out of both blocks and may exercise the real
+binary/network; they are excluded from the default `pytest` run (see pytest.ini's
+`addopts = -m "not integration"`) and must be run explicitly with `pytest -m integration`.
 """
 import pytest
 
@@ -51,10 +59,25 @@ def _blocked_network_call(*_args, **_kwargs):
 
 
 @pytest.fixture(autouse=True)
-def block_real_network(monkeypatch):
+def block_real_network(request, monkeypatch):
     """Prevent any test from making a real outbound HTTP call unless it opts in."""
+    if "integration" in request.keywords:
+        return
     monkeypatch.setattr("requests.post", _blocked_network_call)
     monkeypatch.setattr("requests.get", _blocked_network_call)
+
+
+@pytest.fixture(autouse=True)
+def block_real_tesseract(request, monkeypatch):
+    """Prevent the standard suite from depending on whether Tesseract is installed.
+
+    Forces app.services.ocr_service._tesseract() to return None unconditionally, so
+    every non-integration test deterministically exercises the manual-transcription
+    fallback rather than an environment-dependent real/absent Tesseract binary.
+    """
+    if "integration" in request.keywords:
+        return
+    monkeypatch.setattr("app.services.ocr_service._tesseract", lambda image_path: None)
 
 
 @pytest.fixture
