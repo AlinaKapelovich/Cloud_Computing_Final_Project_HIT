@@ -20,6 +20,11 @@
   </form>
 </div>
 
+{# Side-effects consultation is a drug-name lookup, not tied to a specific patient
+   record, so it must always be reachable here — not gated behind a successful
+   patient search. #}
+{{ consult_panel('/api/consult/side-effects', 'Drug side-effects consultation', 'e.g. amoxicillin', button='Check side-effects') }}
+
 {% if national_id and not patient %}
   <div class="card"><div class="empty-state">
     <div class="icon">🔍</div>
@@ -105,7 +110,5 @@
     </div>
   </div>
   {% endif %}
-
-  {{ consult_panel('/api/consult/side-effects', 'Drug side-effects consultation', 'e.g. amoxicillin', button='Check side-effects') }}
 {% endif %}
 {% endblock %}

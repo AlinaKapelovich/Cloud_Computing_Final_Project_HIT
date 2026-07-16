@@ -13,9 +13,8 @@
 
 {{ stat_cards(stats) }}
 
-<div class="grid cols-3" style="margin-top:20px;">
+<div class="grid cols-2" style="margin-top:20px;">
   {{ action_card('👥', 'Patient list', 'View, search and edit all patient records.', 'admin.patients_list', 'Open') }}
   {{ action_card('➕', 'Register patient', 'Create a new patient record with demographics and contact details.', 'admin.patient_create', 'Create') }}
-  {{ action_card('🩺', 'Clinical workflow', 'Doctors create visits and prescriptions from these patient records.', None) }}
 </div>
 {% endblock %}

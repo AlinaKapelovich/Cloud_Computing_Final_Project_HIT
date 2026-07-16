@@ -21,21 +21,27 @@ medical-dashboard design system (no default/unstyled pages).
 ## Components (reused via Jinja macros)
 - **Stat cards** (`stat_cards`) on every dashboard.
 - **Status badges** (`status_badge`): open (blue), dispensed (green), cancelled (red).
-- **Action cards** for dashboard quick links (with "coming soon" when a feature is off).
+- **Action cards** (`action_card`) for dashboard quick links. Every action card links to
+  a real, working route — there is no "coming soon" placeholder state anywhere in the app.
 - **Consultation panel** (`consult_panel`): input + results rendered from the JSON API.
 - **Flash alerts**: success/danger/warning/info.
 - **Empty states**: icon + message + call-to-action when a list is empty.
 - **Forms**: WTForms rendered through `render_field` with inline error messages and focus states.
 
 ## Role dashboards
-- **Admin:** patients / staff / prescriptions stats + patient actions.
+- **Admin:** patients / prescriptions stats (read-only oversight; Admin's scope is
+  patient-record management — there is no staff/user-account management feature, so no
+  such stat is shown) + patient list/search/create/edit actions.
 - **Doctor:** patients / prescriptions / visits stats + start-visit / prescriptions / consult.
-- **Pharmacist:** open / dispensed / uploads stats + find-patient / upload / side-effects.
+- **Pharmacist:** open / dispensed / uploads stats + find-patient / upload / side-effects,
+  plus a "recent uploads" table so an upload not linked to a patient stays reachable.
 
 ## Required pages (all implemented & styled)
-Login · role dashboards · patient list/create/edit/detail · select patient · new visit ·
-new prescription (with diagnosis consultation) · prescription detail/list · pharmacist search ·
-upload · OCR review · side-effects consultation · 403/404/500 error pages.
+Login · role dashboards · patient list (with search)/create/edit/detail · select patient ·
+new visit · new prescription (with diagnosis consultation) · prescription detail/list ·
+pharmacist search (with side-effects consultation, reachable without a prior patient
+search) · upload · OCR review (with AI-validation enforcement and manual-confirmation
+checkbox) · 403/404/413/500/CSRF error pages.
 
 ## Feedback & states
 - Every action gives a flash message (success/error).

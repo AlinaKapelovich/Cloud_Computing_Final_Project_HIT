@@ -17,12 +17,13 @@
   <span class="badge {{ css.get(status, 'badge-neutral') }}">{{ status|capitalize }}</span>
 {% endmacro %}
 
-{% macro action_card(icon, title, text, endpoint=None, label='Open') %}
+{% macro action_card(icon, title, text, endpoint, label='Open') %}
+{# `endpoint` is required: every action card on a completed page must link to a real,
+   working route. There is no "coming soon" placeholder state in this project. #}
 <div class="card">
   <div style="font-size:1.6rem;">{{ icon }}</div>
   <div class="card-title" style="margin-top:6px;">{{ title }}</div>
   <p class="muted small">{{ text }}</p>
-  {% if endpoint %}<a class="btn btn-primary btn-sm" href="{{ url_for(endpoint) }}">{{ label }}</a>
-  {% else %}<span class="badge badge-neutral">Coming soon</span>{% endif %}
+  <a class="btn btn-primary btn-sm" href="{{ url_for(endpoint) }}">{{ label }}</a>
 </div>
 {% endmacro %}

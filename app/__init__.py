@@ -30,10 +30,11 @@ def create_app(config_object: type = Config) -> Flask:
     _ensure_runtime_directories(app)
     database_service.init_db(config_object)
 
-    # Seed demo accounts on first run (essential for in-memory demo mode).
+    # Seed demo accounts (in-memory demo mode by default; real databases require
+    # SEED_DEMO_USERS=true to opt in — see app/services/bootstrap.py).
     from app.services.bootstrap import ensure_demo_users
 
-    ensure_demo_users()
+    ensure_demo_users(config_object)
 
     # Initialise extensions.
     login_manager.init_app(app)

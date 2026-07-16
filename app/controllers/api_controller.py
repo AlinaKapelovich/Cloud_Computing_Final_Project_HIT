@@ -4,12 +4,16 @@ Demonstrates a REST-style JSON API layered on top of HTTP, alongside the
 server-rendered HTML views. Consultation endpoints call the service wrappers
 (search / clinical trials) and log each query. Controllers stay thin — no external
 API calls happen here directly.
+
+Access control is enforced in the backend (not just by hiding buttons in templates):
+diagnosis consultation is Doctor-only, side-effects consultation is Pharmacist-only.
 """
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from app.models.service_query_log import ServiceQueryLog
 from app.services import clinical_trials_service, search_service
+from app.utils.decorators import role_required
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -26,6 +30,7 @@ def _query_from_request() -> str:
 
 @api_bp.route("/consult/diagnosis", methods=["POST"])
 @login_required
+@role_required("doctor")
 def consult_diagnosis():
     """Doctor diagnosis consultation: web/drug search + related clinical trials."""
     query = _query_from_request()
@@ -44,6 +49,7 @@ def consult_diagnosis():
 
 @api_bp.route("/consult/side-effects", methods=["POST"])
 @login_required
+@role_required("pharmacist")
 def consult_side_effects():
     """Pharmacist side-effects consultation: drug side-effects + related clinical trials."""
     query = _query_from_request()

@@ -54,13 +54,20 @@ Indexes: `patient_national_id`, `status`. **PrescriptionItem** is an *embedded* 
 ```json
 { "_id": ObjectId, "patient_national_id": "312345678", "patient_name": "...",
   "image_path": "prescriptions_rx/<uuid>.png",
-  "ai_document_validation_result": { "valid": true, "method": "heuristic|hosted_vision",
+  "ai_document_validation_result": { "valid": true, "method": "heuristic|hosted_vision|unavailable",
       "message": "...", "details": { ... } },
-  "ocr_text": "Ibuprofen 200mg ...", "ocr_source": "Cloud OCR|Tesseract (local)|manual",
+  "ocr_text": "Ibuprofen 200mg ...",
+  "ocr_source": "Hugging Face (microsoft/trocr-base-handwritten)|Cloud OCR|Tesseract (local)|manual",
   "ocr_message": null, "status": "open|dispensed", "source": "handwritten_upload",
   "uploaded_by": "Pharmacist Noa Levi", "created_at": ISODate,
-  "dispensed_at": null, "dispensed_by": null }
+  "dispensed_at": null, "dispensed_by": null,
+  "manual_confirmed": false, "manual_confirmed_by": null, "manual_confirmed_at": null }
 ```
+`manual_confirmed*` fields are set only when `ai_document_validation_result.valid is None`
+(the validator could not decide) and the pharmacist explicitly checked "I manually confirm
+that this image is a prescription document" before dispensing was allowed to proceed —
+see `UploadedPrescription.confirm_manually()` and the enforcement logic in
+`pharmacist_controller.dispense_upload`.
 
 ### service_query_logs
 ```json

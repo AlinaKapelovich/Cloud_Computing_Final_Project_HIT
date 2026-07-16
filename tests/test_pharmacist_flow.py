@@ -44,6 +44,14 @@ def test_search_unknown_id_shows_empty_state(pharmacist_client):
     assert b"No patient found" in response.data
 
 
+def test_side_effects_consultation_reachable_without_a_patient_search(pharmacist_client):
+    """Side-effects consultation is a drug-name lookup, not gated behind a patient
+    search — a pharmacist must be able to reach it from a bare /pharmacist/search visit."""
+    response = pharmacist_client.get("/pharmacist/search")
+    assert response.status_code == 200
+    assert b"Drug side-effects consultation" in response.data
+
+
 def test_pharmacist_sees_prescription_medications(pharmacist_client, open_prescription):
     """The pharmacist must see what they are dispensing, not just a count."""
     response = pharmacist_client.get("/pharmacist/search?q=312345678")

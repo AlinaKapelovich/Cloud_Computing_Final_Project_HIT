@@ -14,4 +14,4 @@ app = create_app()
 
 if __name__ == "__main__":
     # host=0.0.0.0 so the server is reachable from inside a Docker container.
-    app.run(host="0.0.0.0", port=app.config.get("PORT", 5000), debug=app.config.get("DEBUG", True))
+    app.run(host="0.0.0.0", port=app.config.get("PORT", 5000), debug=app.config.get("DEBUG", False))

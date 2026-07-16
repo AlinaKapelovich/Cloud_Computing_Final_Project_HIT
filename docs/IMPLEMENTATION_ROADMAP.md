@@ -14,8 +14,9 @@ re-validate). Status reflects the delivered app.
 | M6 | Pharmacist flow | `models/uploaded_prescription.py`, `forms/upload_forms.py`, `pharmacist_controller.py`, pharmacist templates | Search, dispense, upload→review→dispense | ✅ |
 | M7 | AI document validator | `ai_document_validator.py`, `ocr_service.py`, `kafka_service.py` | Validate-before-OCR; heuristic + manual fallbacks | ✅ |
 | M8 | UI/UX polish | `static/css/styles.css`, shared macros | All pages render (no 500s); consistent design | ✅ |
-| M9 | Docker + deploy | `Dockerfile`, `docker-compose.yml`, `render.yaml`, `README.md`, `.env.example`, `.dockerignore` | Image builds; compose runs app+mongo; Render blueprint | ✅ files (build verified on a Docker host) |
+| M9 | Docker + deploy | `Dockerfile`, `docker-compose.yml`, `render.yaml`, `README.md`, `.env.example`, `.dockerignore` | Image builds; compose runs app+mongo; Render blueprint | ⚠️ config written; **build NOT verified** — Docker is not installed in this development environment (no `docker` binary, no Docker Desktop process). Run `docker compose config` and `docker compose up --build` yourself before the defense. |
 | M10 | Final validation | smoke tests, this doc set | Requirements ↔ code ↔ docs cross-check; no secrets | ✅ |
+| M11 | Requirements-completion pass | RBAC on consult API, AI-validator dispense enforcement, one concrete OCR provider (Hugging Face), Admin patient search, pharmacist medication visibility, always-reachable side-effects consult, `SEED_DEMO_USERS`/`FLASK_DEBUG` production defaults, network-blocked deterministic test suite, removal of the ungrounded "Clinical workflow" card and "Staff accounts" stat | Full pytest suite green with zero real network calls; every claim in this doc set checked against what the code actually does | ✅ |
 
 ## Validation approach
 - `python -m compileall app` after each change.

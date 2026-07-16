@@ -121,6 +121,32 @@ def dispense_upload(upload_id):
     if not upload_doc:
         abort(404)
     edited_text = request.form.get("ocr_text", upload_doc.get("ocr_text", ""))
+
+    # Enforce the AI/heuristic document validation result before dispensing — never
+    # dispense "as if everything is normal" when the image was flagged as invalid.
+    validation = upload_doc.get("ai_document_validation_result") or {}
+    is_valid = validation.get("valid")
+
+    if is_valid is False:
+        flash(
+            "This image was flagged as not looking like a prescription document. "
+            "Please upload a different image instead of dispensing this one.", "danger",
+        )
+        return redirect(url_for("pharmacist.review_upload", upload_id=upload_id))
+
+    if is_valid is None:
+        manual_confirm_checked = request.form.get("manual_confirm") == "on"
+        already_confirmed = bool(upload_doc.get("manual_confirmed"))
+        if not (manual_confirm_checked or already_confirmed):
+            flash(
+                "Document validation was unavailable for this upload. Please check "
+                "“I manually confirm that this image is a prescription document” "
+                "before dispensing.", "danger",
+            )
+            return redirect(url_for("pharmacist.review_upload", upload_id=upload_id))
+        if manual_confirm_checked and not already_confirmed:
+            UploadedPrescription.confirm_manually(upload_id, current_user)
+
     if UploadedPrescription.dispense(upload_id, current_user, ocr_text=edited_text):
         kafka_service.publish_dispensed_event({**upload_doc, "source": "handwritten_upload"})
         flash("Uploaded prescription dispensed.", "success")

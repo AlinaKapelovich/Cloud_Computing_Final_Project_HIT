@@ -18,9 +18,12 @@ requirements with the locked technical decisions below.
 ## 3. Functional requirements
 
 ### 3.1 Admin
-- Create patient records; view patient list; edit patient details; view patient profile.
+- Create patient records; view and **search** the patient list; edit patient details;
+  view patient profile.
 - Patient fields: national ID, first name, last name, gender, pregnancy status, lactation
   status, **birth date (age is calculated, not stored)**, photo, email, phone.
+- Admin's scope is patient-record management only — there is no staff/user-account
+  management feature (intentionally not built; not part of the official requirements).
 
 ### 3.2 Doctor
 - Select a patient; create a visit (complaints, diagnosis).
@@ -32,10 +35,15 @@ requirements with the locked technical decisions below.
 
 ### 3.3 Pharmacist
 - Search patient by national ID.
-- View open and dispensed prescriptions; dispense an open prescription.
-- Upload an image of a handwritten prescription; run **AI document validation** then **OCR**;
-  review/correct the extracted text; dispense the uploaded prescription.
-- Consult drug **side-effects** using a cloud service.
+- View open and dispensed prescriptions, including the medications on each (not just a
+  count); dispense an open prescription.
+- Upload an image of a handwritten prescription; run **AI document validation** then
+  **OCR** (image-to-text extraction — not translation); review/correct the extracted
+  text; dispense the uploaded prescription. Dispensing is **blocked** if the document was
+  flagged invalid, and **requires an explicit manual confirmation checkbox** if validation
+  was unavailable — it is never dispensed silently as if validation passed.
+- Consult drug **side-effects** using a cloud service, reachable directly from the
+  pharmacist search page (a drug-name lookup, not gated behind finding a specific patient).
 
 ## 4. Non-functional requirements
 - **Fallback-first:** every external service has a documented fallback; the app runs
@@ -49,18 +57,26 @@ requirements with the locked technical decisions below.
 - **PIV methodology:** Planning (docs) → Implementation (milestones) → Validation (smoke tests).
 
 ## 5. Mandatory cloud services (all wrapped, all with fallbacks)
-| Service | Wrapper | Fallback |
-|---|---|---|
-| Cloud NoSQL database | MongoDB Atlas via `database_service.py` | In-memory mongomock |
-| PDF/blob storage | Cloudinary via `cloud_storage_service.py` | Local `generated_pdfs/` |
-| Diagnosis search | Tavily via `search_service.py` | OpenFDA → message |
-| Clinical research | ClinicalTrials.gov via `clinical_trials_service.py` | Empty valid structure |
-| OCR | Cloud OCR via `ocr_service.py` | Tesseract → manual |
-| AI document validation | Hosted vision via `ai_document_validator.py` | Heuristic → manual |
+
+See `docs/CLOUD_SERVICES.md` for the full status of each (including which are tested via
+mocked unit tests vs. requiring a live credential this environment could not test — this
+sandbox has no outbound internet access).
+
+| Service | Wrapper | Fallback | Status |
+|---|---|---|---|
+| Cloud NoSQL database | MongoDB Atlas via `database_service.py` | In-memory mongomock | Mandatory — implemented with fallback, live credentials required |
+| PDF/blob storage | Cloudinary via `cloud_storage_service.py` | Local `generated_pdfs/` | Mandatory — implemented with fallback, live credentials required |
+| Diagnosis search | Tavily via `search_service.py` | OpenFDA → message | Mandatory — implemented with fallback, live credentials required |
+| Clinical research | ClinicalTrials.gov via `clinical_trials_service.py` | Empty valid structure | Mandatory — implemented with fallback (keyless API) |
+| OCR | Hugging Face (TrOCR) via `ocr_service.py` | Generic cloud endpoint → Tesseract → manual | Mandatory — implemented with fallback, live credentials required |
+| AI document validation | Hosted vision via `ai_document_validator.py` | Heuristic → manual confirmation | Bonus — implemented |
 
 ## 6. Bonus features
-- **Implemented:** Docker + Render deployment; AI document validator.
-- **Documented stubs only:** Kafka (dispense events), Ollama (local LLM) — not enabled by
+- **Implemented:** AI document validator (with real dispense-time enforcement, not just
+  a status badge); Docker/Render deployment **configuration** (Docker itself was not
+  available to build/run in this development environment — see `docs/VALIDATION_CHECKLIST.md`).
+- **Documented stubs only:** Kafka (dispense events — always logs to console, no real
+  producer), Ollama (local LLM — not implemented, documentation only) — not enabled by
   default; core stability takes priority.
 
 ## 7. Acceptance criteria (high level)

@@ -10,6 +10,15 @@
   <a class="btn btn-primary" href="{{ url_for('admin.patient_create') }}">➕ New patient</a>
 </div>
 
+<div class="card">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by name or national ID"
+           style="flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;">
+    <button class="btn btn-primary" type="submit">Search</button>
+    {% if query %}<a class="btn btn-secondary" href="{{ url_for('admin.patients_list') }}">Clear</a>{% endif %}
+  </form>
+</div>
+
 {% if patients %}
 <div class="table-wrap">
   <table class="data">
@@ -48,6 +57,14 @@
       {% endfor %}
     </tbody>
   </table>
+</div>
+{% elif query %}
+<div class="card">
+  <div class="empty-state">
+    <div class="icon">🔍</div>
+    <h3>No patients match “{{ query }}”</h3>
+    <p>Try a different name or national ID.</p>
+  </div>
 </div>
 {% else %}
 <div class="card">

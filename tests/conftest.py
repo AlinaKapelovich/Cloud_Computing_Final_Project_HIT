@@ -2,12 +2,59 @@
 
 Each test gets a fresh application (and therefore a fresh in-memory database), so tests
 are isolated and need no cloud credentials. CSRF is disabled for the test client only.
+
+Network policy: the `block_real_network` autouse fixture below replaces `requests.post`
+and `requests.get` with a stub that raises if called, so the *standard* `python -m
+pytest` run can never make a real outbound HTTP call to Tavily, OpenFDA, ClinicalTrials.gov,
+a cloud OCR endpoint, or a hosted vision endpoint — even on a machine with real internet
+access and even if real API keys happen to be present in the environment. Individual
+tests that need to exercise a provider's success/failure path re-patch `requests.post`/
+`requests.get` themselves (via the `monkeypatch` fixture, which layers on top of and
+later undoes this default). This also means every external-service code path degrades to
+its documented fallback by default, so the existing "graceful fallback" tests keep working
+unchanged — they are simply exercising the block instead of a real network failure.
 """
 import pytest
 
 from app import create_app
 
 DEMO_PASSWORD = "demo1234"
+
+
+class FakeResponse:
+    """A minimal stand-in for `requests.Response`, used to mock external APIs in tests."""
+
+    def __init__(self, status_code=200, json_data=None, text_data="", content=b""):
+        self.status_code = status_code
+        self._json = json_data
+        self.text = text_data
+        self.content = content
+
+    def json(self):
+        if self._json is None:
+            raise ValueError("Response has no JSON body")
+        return self._json
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            import requests
+
+            raise requests.HTTPError(f"{self.status_code} error")
+
+
+def _blocked_network_call(*_args, **_kwargs):
+    raise RuntimeError(
+        "Real network access is disabled during tests. Explicitly monkeypatch "
+        "requests.post/requests.get in this test if you need to exercise a specific "
+        "provider response."
+    )
+
+
+@pytest.fixture(autouse=True)
+def block_real_network(monkeypatch):
+    """Prevent any test from making a real outbound HTTP call unless it opts in."""
+    monkeypatch.setattr("requests.post", _blocked_network_call)
+    monkeypatch.setattr("requests.get", _blocked_network_call)
 
 
 @pytest.fixture

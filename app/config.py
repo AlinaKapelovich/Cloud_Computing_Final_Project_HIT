@@ -20,13 +20,33 @@ def _flag(name: str, default: str = "0") -> bool:
     return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _flag_or_none(name: str):
+    """Like `_flag`, but returns None when the variable is unset (tri-state).
+
+    Used for settings where "not set" should trigger different behaviour than an
+    explicit "false" — see SEED_DEMO_USERS.
+    """
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return None
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Config:
     """Central configuration object consumed by the Flask application factory."""
 
     # --- Flask core ---
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-secret-change-me")
-    DEBUG = _flag("FLASK_DEBUG", "1")
+    # Debug defaults to OFF: a fresh clone with no .env must never accidentally expose
+    # the interactive debugger/auto-reloader. Opt in locally via FLASK_DEBUG=1 in .env.
+    DEBUG = _flag("FLASK_DEBUG", "0")
     PORT = int(os.getenv("PORT", "5000"))
+
+    # --- Demo user seeding ---
+    # Tri-state: None = not explicitly set (bootstrap.py then seeds only in demo/in-memory
+    # database mode); True/False = explicit override, honored regardless of database mode.
+    SEED_DEMO_USERS = _flag_or_none("SEED_DEMO_USERS")
+    DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "demo1234")
 
     # --- Filesystem paths ---
     BASE_DIR = BASE_DIR
@@ -47,7 +67,12 @@ class Config:
     # --- Diagnosis search (Tavily) ---
     TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "").strip()
 
-    # --- OCR (cloud-first, then Tesseract, then manual) ---
+    # --- OCR (Hugging Face Inference API first, then a generic cloud endpoint,
+    #     then local Tesseract, then manual transcription) ---
+    # Hugging Face Inference API (concrete, implemented provider — see ocr_service.py).
+    HUGGINGFACE_API_TOKEN = os.getenv("HUGGINGFACE_API_TOKEN", "").strip()
+    HUGGINGFACE_OCR_MODEL = os.getenv("HUGGINGFACE_OCR_MODEL", "microsoft/trocr-base-handwritten").strip()
+    # Generic cloud OCR endpoint — an escape hatch for a different provider if needed.
     OCR_API_URL = os.getenv("OCR_API_URL", "").strip()
     OCR_API_KEY = os.getenv("OCR_API_KEY", "").strip()
 

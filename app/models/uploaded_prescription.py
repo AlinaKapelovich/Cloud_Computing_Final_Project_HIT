@@ -3,6 +3,10 @@
 Holds the uploaded image, the AI document-validation result, and the OCR text
 (reviewed/edited by the pharmacist before dispensing).
 
+When the AI/heuristic validator cannot make a determination (`ai_document_validation_result
+.valid is None`), dispensing requires an explicit pharmacist confirmation — recorded in
+`manual_confirmed`, `manual_confirmed_by` and `manual_confirmed_at`.
+
 Status : open | dispensed
 Source : handwritten_upload
 """
@@ -36,6 +40,9 @@ class UploadedPrescription:
             "created_at": now_utc(),
             "dispensed_at": None,
             "dispensed_by": None,
+            "manual_confirmed": False,
+            "manual_confirmed_by": None,
+            "manual_confirmed_at": None,
         }
         result = cls._collection().insert_one(document)
         document["_id"] = result.inserted_id
@@ -56,6 +63,24 @@ class UploadedPrescription:
         return cls._collection().update_one(
             {"_id": oid}, {"$set": {"ocr_text": text or ""}}
         ).matched_count > 0
+
+    @classmethod
+    def confirm_manually(cls, upload_id, pharmacist):
+        """Record that a pharmacist manually confirmed this looks like a real prescription.
+
+        Used when the AI/heuristic validator could not make a determination
+        (`ai_document_validation_result.valid is None`) — the pharmacist takes explicit
+        responsibility instead of dispensing "as if everything is normal".
+        """
+        oid = to_object_id(upload_id)
+        if oid is None:
+            return False
+        update = {
+            "manual_confirmed": True,
+            "manual_confirmed_by": getattr(pharmacist, "full_name", "pharmacist"),
+            "manual_confirmed_at": now_utc(),
+        }
+        return cls._collection().update_one({"_id": oid}, {"$set": update}).matched_count > 0
 
     @classmethod
     def dispense(cls, upload_id, pharmacist, ocr_text=None):

@@ -2,6 +2,7 @@
 {% from 'shared/_components.html' import status_badge %}
 {% block page_title %}Review upload{% endblock %}
 {% set ai = upload.ai_document_validation_result or {} %}
+{% set is_valid = ai.valid %}
 
 {% block content %}
 <div class="page-heading">
@@ -25,15 +26,22 @@
 
   <div class="card">
     <div class="card-title">AI document validation</div>
-    {% if ai.valid is sameas true %}
+    {% if is_valid is sameas true %}
       <span class="badge badge-live">✓ Looks like a document</span>
-    {% elif ai.valid is sameas false %}
+    {% elif is_valid is sameas false %}
       <span class="badge badge-cancelled">✗ Does not look like a document</span>
     {% else %}
-      <span class="badge badge-fallback">Validation unavailable — manual check</span>
+      <span class="badge badge-fallback">Validation unavailable — manual check required</span>
     {% endif %}
     <p class="small muted" style="margin-top:8px;">Method: <strong>{{ ai.method or 'n/a' }}</strong></p>
     <p class="small">{{ ai.message or '' }}</p>
+
+    {% if upload.manual_confirmed %}
+      <p class="small muted" style="margin-top:8px;">
+        Manually confirmed by <strong>{{ upload.manual_confirmed_by }}</strong>
+        on {{ upload.manual_confirmed_at.strftime('%Y-%m-%d %H:%M') if upload.manual_confirmed_at.strftime is defined else upload.manual_confirmed_at }}.
+      </p>
+    {% endif %}
 
     <div class="card-title" style="margin-top:16px;">OCR</div>
     <p class="small muted">Source: <strong>{{ upload.ocr_source or 'n/a' }}</strong></p>
@@ -46,6 +54,15 @@
   </div>
 </div>
 
+{% if is_valid is sameas false and upload.status == 'open' %}
+<div class="card">
+  <div class="alert alert-danger">
+    <strong>This upload cannot be dispensed.</strong> The image was flagged as not looking
+    like a prescription document ({{ ai.message }}). Please upload a different image.
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('pharmacist.upload') }}">🖼 Upload a different image</a>
+</div>
+{% else %}
 <div class="card">
   <form method="post" action="{{ url_for('pharmacist.dispense_upload', upload_id=upload.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -53,6 +70,17 @@
       <label for="ocr_text">Prescription text (review / correct before dispensing)</label>
       <textarea id="ocr_text" name="ocr_text" rows="6" {{ 'readonly' if upload.status == 'dispensed' else '' }}>{{ upload.ocr_text }}</textarea>
     </div>
+
+    {% if is_valid is none and upload.status == 'open' and not upload.manual_confirmed %}
+      <div class="alert alert-warning">
+        Automatic document validation was unavailable for this upload. Please confirm manually before dispensing.
+      </div>
+      <div class="field checkbox">
+        <input type="checkbox" id="manual_confirm" name="manual_confirm">
+        <label for="manual_confirm">I manually confirm that this image is a prescription document.</label>
+      </div>
+    {% endif %}
+
     <div class="form-actions">
       {% if upload.status == 'open' %}
         <button class="btn btn-primary" type="submit">✓ Confirm & dispense</button>
@@ -62,4 +90,5 @@
     </div>
   </form>
 </div>
+{% endif %}
 {% endblock %}

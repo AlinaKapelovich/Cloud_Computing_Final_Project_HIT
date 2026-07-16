@@ -3,7 +3,7 @@
 Thin controller: validates the patient form, delegates to patient_service, and
 renders templates. All data logic lives in the model/service layers.
 """
-from flask import Blueprint, abort, flash, redirect, render_template, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
 from app.forms.patient_forms import PatientForm
@@ -18,11 +18,12 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 @login_required
 @role_required("admin")
 def dashboard():
+    # Admin's official scope is patient-record management. "Prescriptions" is kept as a
+    # read-only, non-interactive count for oversight; no staff/user-account management
+    # stat is shown here because Admin cannot actually manage accounts.
     stats = [
         {"label": "Patients", "value": get_collection("patients").count_documents({}),
          "endpoint": "admin.patients_list"},
-        {"label": "Staff accounts", "value": get_collection("users").count_documents({}),
-         "endpoint": None},
         {"label": "Prescriptions", "value": get_collection("prescriptions").count_documents({}),
          "endpoint": None},
     ]
@@ -33,8 +34,16 @@ def dashboard():
 @login_required
 @role_required("admin")
 def patients_list():
+    query = (request.args.get("q") or "").strip()
     patients = patient_service.list_patients()
-    return render_template("admin/patients_list.html", patients=patients)
+    if query:
+        q = query.lower()
+        patients = [
+            p for p in patients
+            if q in (p.get("national_id", "").lower())
+            or q in (f"{p.get('first_name','')} {p.get('last_name','')}".lower())
+        ]
+    return render_template("admin/patients_list.html", patients=patients, query=query)
 
 
 @admin_bp.route("/patients/new", methods=["GET", "POST"])

@@ -36,26 +36,39 @@ seeded automatically.
 
 ## Demo flow (for the defense)
 
-1. **Admin** logs in → creates a patient (national ID, name, gender, birth date, etc.).
+1. **Admin** logs in → creates a patient (national ID, name, gender, birth date, etc.) →
+   can search the patient list by name/national ID.
 2. **Doctor** logs in → selects the patient → records a visit (complaints, diagnosis) →
-   optionally **consults** Tavily + ClinicalTrials.gov → creates a prescription with
-   medications → a **PDF is generated** and stored (Cloudinary, or local fallback).
-3. **Pharmacist** logs in → searches the patient by national ID → **dispenses** the open
-   prescription → uploads a **handwritten** prescription image → the app runs
-   **AI document validation → OCR → review** → dispenses the uploaded prescription →
-   can **consult drug side-effects**.
+   optionally **consults** Tavily + ClinicalTrials.gov (Doctor-only) → creates a
+   prescription with medications → a **PDF is generated** and stored (Cloudinary, or
+   local fallback, openable by both Doctor and Pharmacist).
+3. **Pharmacist** logs in → can **consult drug side-effects** (Pharmacist-only) right
+   away, without needing to find a patient first → searches a patient by national ID and
+   sees the actual medications on each prescription → **dispenses** the open prescription
+   → uploads a **handwritten** prescription image → the app runs **AI document
+   validation → OCR (image-to-text) → review**. If the image is flagged invalid,
+   dispensing is blocked; if validation is unavailable, dispensing requires an explicit
+   "I manually confirm this is a prescription document" checkbox → dispenses the
+   uploaded prescription.
 
 ---
 
 ## Tests
 
 ```bash
-python -m pytest        # 43 tests, no credentials needed
+python -m pytest        # 64 tests, no credentials needed, zero real network calls
 ```
 
-The suite drives the real flows through Flask's test client: auth/roles, patient CRUD,
-visit→prescription→PDF, consultation fallbacks, and the pharmacist upload→AI validation→OCR→
-dispense flow, plus a render sweep of every page for every role.
+The suite drives the real flows through Flask's test client: auth/roles, patient CRUD
+(including search), visit→prescription→PDF, RBAC on the consultation endpoints, mocked
+provider tests (Hugging Face OCR, Tavily, OpenFDA, ClinicalTrials.gov, Cloudinary), the
+AI-validator dispense-enforcement states, and the pharmacist upload→AI validation→OCR→
+review→dispense flow, plus a render sweep of every page for every role.
+
+`tests/conftest.py::block_real_network` replaces `requests.post`/`requests.get` with a
+stub that raises unless a test explicitly re-mocks it — so the suite never makes a real
+outbound call to Tavily/OpenFDA/ClinicalTrials.gov/Hugging Face/a hosted vision endpoint,
+even on a machine with internet access and real API keys set.
 
 ---
 
@@ -86,11 +99,17 @@ container even without a cloud OCR key.
 
 ## Deploying to Render
 
+> ⚠️ **Not yet deployed.** No live Render URL exists for this project. The steps below
+> describe how to deploy it; do not claim a working deployment until you've actually
+> created one and checked `/health`, login, PDF access, and the upload flow against it.
+
 1. Push this repository to GitHub.
 2. On [render.com](https://render.com) create a new **Blueprint** and point it at the repo
    (it reads [`render.yaml`](render.yaml)).
 3. Render builds the Docker image and runs it. `SECRET_KEY` is generated automatically;
    set `MONGO_URI` and any cloud keys in the dashboard to enable the real integrations.
+   Set `SEED_DEMO_USERS=true` explicitly if you want the demo1234 accounts available on a
+   real database for the defense — it is never enabled silently (see Configuration below).
 4. Health check path is `/health`.
 
 ---
@@ -103,13 +122,19 @@ fallback**, so the app always runs.
 | Variable | Enables | Fallback if empty |
 |---|---|---|
 | `MONGO_URI` | MongoDB Atlas (cloud DB) | In-memory demo DB (mongomock) |
+| `SEED_DEMO_USERS` | Force demo-user seeding on/off | Auto: seeds only when `MONGO_URI` is empty (demo mode) |
+| `DEMO_PASSWORD` | Password for seeded demo accounts | `demo1234` |
 | `CLOUDINARY_*` | PDF cloud storage | Local `generated_pdfs/` |
 | `TAVILY_API_KEY` | Diagnosis web search | OpenFDA, then a clear message |
-| `OCR_API_URL` / `OCR_API_KEY` | Cloud OCR | Tesseract, then manual transcription |
-| `VISION_API_URL` / `VISION_API_KEY` | AI document validation | Local heuristic checks |
+| `HUGGINGFACE_API_TOKEN` / `HUGGINGFACE_OCR_MODEL` | Cloud OCR (Hugging Face TrOCR) | Generic `OCR_API_URL`, then Tesseract, then manual transcription |
+| `OCR_API_URL` / `OCR_API_KEY` | Generic cloud OCR (alternate provider) | Tesseract, then manual transcription |
+| `VISION_API_URL` / `VISION_API_KEY` | AI document validation | Local heuristic checks, then required manual confirmation |
 | `CLINICAL_TRIALS_BASE_URL` | ClinicalTrials.gov | Public API (no key needed) |
+| `FLASK_DEBUG` | Auto-reload + interactive debugger | **Off by default** — a fresh clone is production-safe |
 
-Secrets are **never** hardcoded or committed. `.env` is git-ignored.
+Secrets are **never** hardcoded or committed. `.env` is git-ignored. `SEED_DEMO_USERS`
+is never silently enabled against a real, persistent database (`MONGO_URI` set) — see
+`docs/CLOUD_SERVICES.md` and `app/services/bootstrap.py`.
 
 ---
 
@@ -160,7 +185,12 @@ monolithic vs distributed, Data Lake vs Database, etc.) and how to explain any c
 
 ## Bonus / future extensions
 
-- **Docker + Render** — implemented (this repo).
-- **AI document validator** — implemented (hosted vision + heuristic fallback).
+- **Docker + Render** — configuration written (`Dockerfile`, `docker-compose.yml`,
+  `render.yaml`) but **not build-verified**: Docker was not installed in this development
+  environment, and no Render deployment has been created yet. Run `docker compose config`
+  / `docker compose up --build` yourself before relying on this for the defense.
+- **AI document validator** — implemented, including real dispense-time enforcement
+  (blocks on an invalid document; requires explicit manual confirmation when validation
+  is unavailable) — not hosted-vision-tested live, but fully covered by mocked/heuristic tests.
 - **Kafka** (dispense events) and **Ollama** (local LLM) — documented **stubs only**; not
   enabled by default so the core system stays stable and easy to defend.
