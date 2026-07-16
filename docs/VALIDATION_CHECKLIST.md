@@ -51,17 +51,26 @@
 - [x] Models hold data + MongoDB access only.
 - [x] Templates contain no API calls; static assets separate from views.
 
-## Cloud services (see docs/CLOUD_SERVICES.md for full detail)
-- [x] MongoDB Atlas via wrapper (+ in-memory fallback) — not tested live (no MONGO_URI
-      available in this environment); fallback path exercised by the entire test suite.
-- [x] Cloudinary via wrapper (+ local fallback) — not tested live; mocked success test
-      exercises the real SDK call signature.
-- [x] Tavily (+ OpenFDA fallback) — not tested live; both mocked with realistic responses.
-- [x] ClinicalTrials.gov (empty-valid on failure) — not tested live (keyless, but this
-      sandbox has no outbound network); mocked success + graceful-failure tests exist.
-- [x] Hugging Face OCR (TrOCR) (+ generic cloud endpoint + Tesseract + manual fallback) —
-      not tested live; mocked success/cold-start/failure tests exist.
-- [x] AI validator: hosted vision (+ heuristic + manual-confirmation fallback) — not
+## Cloud services (see docs/CLOUD_SERVICES.md and docs/LIVE_VERIFICATION.md for full detail)
+- [ ] MongoDB Atlas via wrapper (+ in-memory fallback) — **not tested live**, blocked on
+      credentials (no `MONGO_URI` provisioned — action item recorded in
+      `docs/LIVE_VERIFICATION.md`); fallback path exercised by the entire test suite.
+- [ ] Cloudinary via wrapper (+ local fallback) — **not tested live**, blocked on
+      credentials (action item recorded in `docs/LIVE_VERIFICATION.md`); mocked success
+      test exercises the real SDK call signature.
+- [ ] Tavily — **not tested live**, blocked on credentials (action item recorded in
+      `docs/LIVE_VERIFICATION.md`); mocked with a realistic response.
+- [x] **OpenFDA (search fallback) — tested live 2026-07-16**: a real diagnosis
+      consultation for `ibuprofen` returned real label text, independently cross-checked
+      against `api.fda.gov` directly. See `docs/LIVE_VERIFICATION.md`.
+- [x] **ClinicalTrials.gov — tested live 2026-07-16**: a real diagnosis consultation for
+      `asthma` returned 5 real studies; `NCT00927264` independently cross-checked against
+      `clinicaltrials.gov` directly and matched exactly. `LIVE_VERIFIED_SERVICES` includes
+      `clinicaltrials`. See `docs/LIVE_VERIFICATION.md`.
+- [ ] Hugging Face OCR (TrOCR) (+ generic cloud endpoint + Tesseract + manual fallback) —
+      **not tested live**, blocked on credentials (action item recorded in
+      `docs/LIVE_VERIFICATION.md`); mocked success/cold-start/failure tests exist.
+- [ ] AI validator: hosted vision (+ heuristic + manual-confirmation fallback) — not
       tested live; heuristic path is exercised directly (no mock needed, it's local code).
 
 ## Fallback (each service disabled)
@@ -128,12 +137,19 @@
       before the defense to see the actual rendered pages.
 
 ## Live cloud verification
-- [ ] **NOT DONE:** `docs/LIVE_VERIFICATION.md` — a checklist of real, successful calls
-      to each mandatory service (MongoDB Atlas persistence, Cloudinary PDF upload,
-      Tavily, Hugging Face OCR with a real image, ClinicalTrials.gov), each requiring a
-      recorded date and result. Every row is currently "not yet tested" — this sandbox
-      has no outbound internet access. Complete this on a machine with real credentials
-      and internet access before claiming any provider works live.
+`docs/LIVE_VERIFICATION.md` — checklist of real, successful calls to each mandatory
+service, with dates and evidence.
+- [x] **ClinicalTrials.gov — Pass, 2026-07-16.** No credentials needed.
+- [x] **OpenFDA — Pass, 2026-07-16** (bonus/fallback row, no separate status key).
+- [ ] **MongoDB Atlas persistence — blocked**, no `MONGO_URI` provisioned. Action item
+      (account/cluster/connection-string steps) recorded in the checklist.
+- [ ] **Cloudinary PDF upload — blocked**, no credentials provisioned. Action item recorded.
+- [ ] **Tavily diagnosis search — blocked**, no `TAVILY_API_KEY` provisioned. Action item recorded.
+- [ ] **Hugging Face OCR (real image) — blocked**, no `HUGGINGFACE_API_TOKEN` provisioned.
+      Action item recorded.
+
+Do not claim any of the four blocked services works live until its checklist row shows a
+real "Pass" with recorded evidence — a configured key alone is never sufficient.
 
 ## Defense readiness
 - [x] `DEFENSE_GUIDE.md` covers all required concepts + how to explain a random file.

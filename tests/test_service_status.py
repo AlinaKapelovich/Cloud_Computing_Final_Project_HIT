@@ -12,6 +12,11 @@ def _by_name(summary, name):
 
 
 def test_all_services_are_fallback_with_no_configuration(app):
+    # Explicitly reset, rather than relying on the ambient .env: a developer's local
+    # .env may legitimately carry a real LIVE_VERIFIED_SERVICES value (e.g. after
+    # completing docs/LIVE_VERIFICATION.md for a service) and load_dotenv() picks that
+    # up for every app instance, including this test's.
+    app.config["LIVE_VERIFIED_SERVICES"] = ""
     with app.test_request_context():
         summary = service_status_summary(app.config)
     for row in summary:
@@ -80,7 +85,15 @@ def test_verified_without_configuration_does_not_apply(app):
 
 
 def test_pytest_never_sets_live_verified_services_by_default(app):
-    """Sanity check: the test suite itself must never accidentally claim a live verification."""
+    """Sanity check: the app's default logic itself never fabricates a 'Verified' status.
+
+    This does not assert anything about a developer's local .env — a real,
+    human-completed verification legitimately sets LIVE_VERIFIED_SERVICES there. It
+    asserts that nothing in the *application code path* (config defaults, service
+    status logic, or any pytest fixture) manufactures "Verified" on its own, which is
+    why the config is reset here rather than left to whatever the ambient .env holds.
+    """
+    app.config["LIVE_VERIFIED_SERVICES"] = ""
     with app.test_request_context():
         summary = service_status_summary(app.config)
     assert all(row["status"] != "Verified" for row in summary)

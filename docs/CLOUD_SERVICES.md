@@ -17,18 +17,26 @@ To actually perform and record a real live test for a mandatory service, see
   without a key, including in this repository's own demo.
 - **Mandatory — implemented with fallback, live credentials still required.** Same as
   above, plus: this is one of the project brief's mandatory cloud integrations.
+- **Mandatory — implemented and tested live.** A real, successful call to the actual
+  provider has been made and independently cross-checked, with the date and evidence
+  recorded in `docs/LIVE_VERIFICATION.md`. The strongest status — only used once that
+  file's row for the service says "Pass" with a real result, never assumed.
 - **Bonus — implemented.** An official bonus feature with working code and tests.
 - **Bonus — configured but unverified.** Wiring exists (env vars, service file) but the
   feature has not been exercised at all, live or mocked.
 - **Future-only.** Documented stub, not part of the working system, disabled by default.
 
 ### Live-testing note
-This project was developed in a sandboxed environment **with no outbound internet
-access** (confirmed: an unauthenticated request to `api-inference.huggingface.co`
-failed to connect at the TCP level). That means **no external cloud service in this
-project — MongoDB Atlas, Cloudinary, Tavily, Hugging Face, OpenFDA, ClinicalTrials.gov,
-or a hosted vision endpoint — has been tested live with real credentials**, and no such
-claim is made anywhere in this documentation. What **is** verified:
+This project was originally developed in a sandboxed environment with no outbound
+internet access. A later development environment **does** have outbound internet
+access, which allowed real live verification of the two **keyless** services —
+**ClinicalTrials.gov** and **OpenFDA** — on 2026-07-16 (see `docs/LIVE_VERIFICATION.md`
+for the exact requests and independent cross-checks against each provider directly).
+**MongoDB Atlas, Cloudinary, Tavily, and Hugging Face still have not been tested live**
+in any environment, because they each require a real account/credential that has not
+been provisioned — see the "BLOCKED — action needed" notes in
+`docs/LIVE_VERIFICATION.md` for exactly what's needed for each. What **is** verified
+for every one of the six services regardless of credentials:
 1. Every provider's request/response handling is implemented against its real,
    documented API contract (exact URLs, headers, payload shapes, response parsing).
 2. Every provider's success path, failure path, and fallback chain is covered by a
@@ -36,7 +44,7 @@ claim is made anywhere in this documentation. What **is** verified:
    `tests/test_consultations.py`, `tests/test_cloud_storage.py`).
 3. Every service, with **zero** credentials configured, degrades to its documented
    fallback and the application keeps working end-to-end (this is what running the app
-   locally right now actually demonstrates).
+   locally right now actually demonstrates for the four still-unverified services).
 4. `python -m pytest`'s standard run never makes a real network call — see
    `tests/conftest.py::block_real_network` — so this is true in CI too, not just here.
 
@@ -96,7 +104,11 @@ one, is the source of truth for real live-testing results.
 - **Fallback chain:** Tavily → **OpenFDA** drug label API (keyless) → clear "search
   disabled" message. OpenFDA supplements Tavily; it does not replace ClinicalTrials.gov.
 - **Input:** query string. **Output:** `{source, message, results:[{title,snippet,url}]}`.
-- **Tested live:** No. Mocked success tests:
+- **Tested live:** Tavily — No (no `TAVILY_API_KEY` provisioned; see
+  `docs/LIVE_VERIFICATION.md` for the exact account/token needed). **OpenFDA — Yes**,
+  2026-07-16: a real diagnosis consultation for `ibuprofen` (no Tavily key set, so the
+  OpenFDA fallback ran for real) returned real label text, independently cross-checked
+  against `api.fda.gov` directly. Mocked success tests also exist for both:
   `test_tavily_success_is_parsed_correctly`, `test_openfda_success_is_parsed_correctly`
   (both in `tests/test_consultations.py`), exercising the real request/response shapes.
 - **Access control:** the `/api/consult/diagnosis` endpoint is Doctor-only;
@@ -105,13 +117,17 @@ one, is the source of truth for real live-testing results.
 - **Defense:** consuming a third-party REST API; graceful multi-level fallback.
 
 ## 4. clinical_trials_service.py — ClinicalTrials.gov (official requirement)
-**Status: Mandatory — implemented with fallback, live credentials still required (none needed — keyless API, but not live-network-tested here).**
+**Status: Mandatory — implemented and tested live.**
 - **Purpose:** clinical research related to a diagnosis/treatment/side-effect. This is
   an explicit official requirement, not optional, and is not replaceable by OpenFDA.
 - **Provider:** ClinicalTrials.gov public REST API v2 (no key). **Env:** `CLINICAL_TRIALS_BASE_URL`.
 - **Input:** query. **Output:** `{source, message, results:[{nct_id,title,status,url}]}`.
 - **Failure/empty:** returns an **empty but valid** structure with a message — never raises.
-- **Tested live:** No (no outbound network in this environment). Mocked success test:
+- **Tested live: Yes**, 2026-07-16 — a real diagnosis consultation for `asthma` returned 5
+  real studies; `NCT00927264` was independently cross-checked against
+  `https://clinicaltrials.gov/api/v2/studies/NCT00927264` directly and matched exactly
+  (see `docs/LIVE_VERIFICATION.md` row 5). `LIVE_VERIFIED_SERVICES` includes
+  `clinicaltrials` locally as a result. Mocked success test:
   `test_clinical_trials_success_is_parsed_correctly`; graceful-failure test:
   `test_clinical_trials_service_never_raises` (both in `tests/test_consultations.py`).
 - **Defense:** a keyless public REST API used alongside Tavily/OpenFDA for both roles.

@@ -211,9 +211,12 @@ monolithic vs distributed, Data Lake vs Database, etc.) and how to explain any c
 
 [`docs/CLOUD_SERVICES.md`](docs/CLOUD_SERVICES.md) documents what's *implemented* (and
 mocked-tested) for each cloud integration; [`docs/LIVE_VERIFICATION.md`](docs/LIVE_VERIFICATION.md)
-is the separate checklist for what's actually been *proven to work live* — currently
-every row is "not yet tested" (no outbound internet in the development environment).
-Complete it yourself with real credentials before claiming any provider works live.
+is the separate checklist for what's actually been *proven to work live*. The two keyless
+services — **ClinicalTrials.gov** and **OpenFDA** — have been live-verified (2026-07-16,
+with independent cross-checks against each provider directly). **MongoDB Atlas,
+Cloudinary, Tavily, and Hugging Face OCR still require real credentials** that have not
+been provisioned; see that file's "BLOCKED — action needed" notes for exactly what to set
+up for each. Complete those yourself before claiming any of the four works live.
 
 ---
 
